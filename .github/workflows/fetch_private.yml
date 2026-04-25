@@ -1,0 +1,30 @@
+name: Fetch from private organisation
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Public Repo
+        uses: actions/checkout@v4
+
+      - name: Checkout Private Repo
+        uses: actions/checkout@v4
+        with:
+          repository: PVPDievuMiskas/website
+          token: ${{ secrets.PRIVATE_PAT }}
+          path: temp_private_folder
+
+      - name: Copy files and Push
+        run: |
+          cp -r temp_private_folder/* .
+          rm -rf temp_private_folder
+          
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Update from private repo" || echo "No changes to commit"
+          git push
