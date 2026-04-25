@@ -1,17 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import Navbar from "../../components/Navbar";
+import Navbar from "../../../components/Navbar";
 
 const inputClass = "w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 focus:border-green-700 focus:ring-1 focus:ring-green-700 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-green-400 dark:focus:ring-green-400";
 
-export default function CreateSkelbimasPage() {
+export default function EditSkelbimasPage() {
   const router = useRouter();
+  const params = useParams();
+  const id = params.id as string;
   const { data: session, status } = useSession();
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [error, setError] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   
@@ -29,16 +32,43 @@ export default function CreateSkelbimasPage() {
     kilme: "",
     atstumas: "",
     pristatymo_budas: "atsiimti_patiems",
-    nuotrauka: "", // Base64 image
+    nuotrauka: "",
   });
 
-  if (status !== "loading" && (!session || (session.user as any).role !== "administratorius" && (session.user as any).role !== "atstovas")) {
+  useEffect(() => {
+    if (!id) return;
+    fetch(`/api/skelbimai?id=${id}`).then(r => r.json()).then(data => {
+      const s = data.find((s: any) => s.id_Skelbimas === parseInt(id)) || data[0];
+      if (s) {
+        setForm({
+          pavadinimas: s.pavadinimas || "",
+          aprasymas: s.aprasymas || "",
+          kaina: s.kaina || "",
+          min_kiekis: s.min_kiekis || "",
+          vieta: s.vieta || "",
+          amzius: s.amzius || "",
+          aukstis: s.aukstis || "",
+          plotis: s.plotis || "",
+          lotyniskas_pav: s.lotyniskas_pav || "",
+          tipas: s.tipas || "",
+          kilme: s.kilme || "",
+          atstumas: s.atstumas || "",
+          pristatymo_budas: s.pristatymo_budas || "atsiimti_patiems",
+          nuotrauka: s.nuotrauka || "",
+        });
+        if (s.nuotrauka) setImagePreview(s.nuotrauka);
+      }
+      setFetching(false);
+    });
+  }, [id]);
+
+  if (status !== "loading" && (!session || (session.user as any).role !== "atstovas")) {
     return (
       <div className="min-h-screen bg-white dark:bg-zinc-950">
         <Navbar />
         <div className="pt-32 px-6 text-center">
-          <p className="text-zinc-600 dark:text-zinc-400">Tik administratoriai ir atstovai gali kurti skelbimus.</p>
-          <Link href="/skelbimas" className="text-green-700 mt-4 inline-block hover:underline">Grįžti atgal</Link>
+          <p className="text-zinc-600 dark:text-zinc-400">Tik atstovai gali redaguoti.</p>
+          <Link href="/mano-skelbimai" className="text-green-700 mt-4 inline-block hover:underline">Grįžti atgal</Link>
         </div>
       </div>
     );
@@ -49,7 +79,6 @@ export default function CreateSkelbimasPage() {
     setForm({ ...form, [name]: value });
   };
 
-  // Resize and convert image to base64 so it can be saved in the database
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -67,7 +96,6 @@ export default function CreateSkelbimasPage() {
         const ctx = canvas.getContext("2d");
         ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
         
-        // Export reduced quality Base64 string so it fits safely
         const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
         setImagePreview(dataUrl);
         setForm({ ...form, nuotrauka: dataUrl });
@@ -83,15 +111,15 @@ export default function CreateSkelbimasPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/skelbimai", {
-        method: "POST",
+      const res = await fetch(`/api/skelbimai/${id}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Nepavyko kurti skelbimo");
+        throw new Error(data.error || "Nepavyko atnaujinti skelbimo");
       }
 
       router.push("/mano-skelbimai");
@@ -102,7 +130,7 @@ export default function CreateSkelbimasPage() {
     }
   };
 
-  if (status === "loading") {
+  if (status === "loading" || fetching) {
     return (
       <div className="min-h-screen bg-white dark:bg-zinc-950">
         <Navbar />
@@ -114,28 +142,21 @@ export default function CreateSkelbimasPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-green-50/30 to-white dark:from-zinc-950 dark:via-green-950/20 dark:to-zinc-950 text-zinc-900 dark:text-zinc-100">
+    <div className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       <Navbar />
 
-      <div className="bg-gradient-to-b from-zinc-50/80 to-white/0 dark:from-zinc-900/80 dark:to-transparent border-b border-zinc-200/50 dark:border-zinc-800/50 pt-24 pb-16">
+      <div className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 pt-24 pb-12">
         <div className="mx-auto max-w-3xl px-6">
-          <div className="inline-flex items-center gap-2 mb-4 px-3 py-1.5 bg-green-100 dark:bg-green-900/40 rounded-full text-xs font-semibold text-green-700 dark:text-green-400">
-            <span>📝</span> Skelbimai
-          </div>
-          <h1 className="mt-4 text-4xl md:text-5xl font-bold text-zinc-900 dark:text-zinc-100 mb-3">Kurti naują skelbimą</h1>
-          <p className="text-lg text-zinc-600 dark:text-zinc-400">Paskelbkite savo miško sodinukus ir suraskite pirkėjus</p>
+          <span className="text-sm font-semibold text-green-700 dark:text-green-400">Skelbimai</span>
+          <h1 className="mt-2 text-3xl font-bold">Redaguoti skelbimą</h1>
         </div>
       </div>
 
       <div className="mx-auto max-w-3xl px-6 py-12">
-        {error && (
-          <div className="mb-6 rounded-xl bg-red-50/90 dark:bg-red-900/30 backdrop-blur-sm border border-red-200 dark:border-red-800/50 p-4 text-red-700 dark:text-red-400 font-semibold">
-            ⚠️ {error}
-          </div>
-        )}
+        {error && <div className="mb-6 rounded-xl bg-red-50 p-4 text-red-600">{error}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow p-8 space-y-6">
+          <div className="rounded-2xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 p-8 space-y-6">
             
             {/* Image Upload */}
             <div>
@@ -151,7 +172,6 @@ export default function CreateSkelbimasPage() {
                       file:rounded-full file:border-0
                       file:text-sm file:font-semibold
                       file:bg-zinc-50 file:text-zinc-700
-                      file:shadow-sm
                       hover:file:bg-zinc-700
                       dark:file:bg-zinc-800 dark:file:text-zinc-300" />
               </div>
@@ -210,18 +230,8 @@ export default function CreateSkelbimasPage() {
               <textarea name="aprasymas" value={form.aprasymas} onChange={handleChange} rows={4} className={inputClass}></textarea>
             </div>
 
-            <button type="submit" disabled={loading} className="w-full h-14 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold rounded-xl transition-all disabled:opacity-50 shadow-lg shadow-green-600/30 hover:shadow-xl hover:shadow-green-600/40 hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  Kuriama...
-                </>
-              ) : (
-                <>
-                  <span>✓</span>
-                  Paskelbti
-                </>
-              )}
+            <button type="submit" disabled={loading} className="w-full h-12 bg-blue-700 hover:bg-blue-800 text-white font-semibold rounded-xl transition-all disabled:opacity-50 shadow-lg shadow-blue-700/25">
+              {loading ? "Saugoma..." : "Išsaugoti pakeitimus"}
             </button>
           </div>
         </form>

@@ -45,7 +45,6 @@ interface VartotojasRow extends RowDataPacket {
 }
 
 export const authOptions: NextAuthOptions = {
-  secret: process.env.NEXTAUTH_SECRET,
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -69,7 +68,7 @@ export const authOptions: NextAuthOptions = {
 
         const user = rows[0];
 
-        if (user.busena === "sustabdytas") {
+        if (user.busena !== "aktyvus") {
           return null;
         }
 

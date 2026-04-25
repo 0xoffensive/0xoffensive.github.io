@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Dievų Miškas — Miško sodinukų platforma",
+  title: "Dievų Giria — Miško sodinukų platforma",
   description:
     "Raskite geriausius miško sodinukus, suplanuokite sodinimą su interaktyviu planavimo įrankiu ir gaukite mokslu pagrįstas rekomendacijas.",
 };

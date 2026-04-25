@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Navbar from "./components/Navbar";
+import MessagingMenu from './components/MessagingMenu';
 import { useState, useEffect } from "react";
 
 interface Skelbimas {
@@ -27,11 +28,14 @@ interface Skelbimas {
   imone_svetaine?: string;
   imone_adresas?: string;
   imone_pastato_nr?: string;
+  nuotrauka?: string | null;
 }
 
 export default function GuestPage() {
+  const [show, setShow] = useState(false);
   const [skelbimai, setSkelbimai] = useState<Skelbimas[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const fetchSkelbimai = async () => {
@@ -49,12 +53,17 @@ export default function GuestPage() {
     };
 
     fetchSkelbimai();
-  }, []);
+  }, [isOpen]);
 
   return (
+    
     <div className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans">
       {/* ── NAVIGATION ── */}
       <Navbar />
+
+      {/* ── MESSAGING MENU ── */}
+      <MessagingMenu />
+
 
       {/* ── HERO SECTION ── */}
       <section className="relative flex min-h-screen flex-col items-center justify-center px-6 pt-24 text-center">
@@ -62,6 +71,7 @@ export default function GuestPage() {
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute -top-40 left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-green-200/40 blur-3xl dark:bg-green-900/20" />
         </div>
+
 
         <div className="relative z-10 mx-auto max-w-4xl">
           <span className="mb-6 inline-block rounded-full bg-green-100 dark:bg-green-900/40 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-green-800 dark:text-green-300">
@@ -205,7 +215,16 @@ export default function GuestPage() {
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {skelbimai.map((skelbimas) => (
               <Link key={skelbimas.id_Skelbimas} href={`/skelbimas/${skelbimas.id_Skelbimas}`} className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-6 transition-all hover:border-green-300 dark:hover:border-green-800 hover:shadow-lg">
-                <div className="mb-4 flex h-40 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/30 text-5xl">🌲</div>
+                <div className="h-40 w-full rounded-xl bg-zinc-100 dark:bg-zinc-800 overflow-hidden mb-4 flex items-center justify-center relative">
+                  {skelbimas.nuotrauka ? (
+                    <img
+                      src={skelbimas.nuotrauka}
+                      alt={skelbimas.pavadinimas}
+                      className="w-full h-full object-cover" />
+                    ) : (
+                    <span className="text-4xl">🌲</span>
+                    )}
+                </div>
                 <h3 className="font-semibold">{skelbimas.pavadinimas}</h3>
                 <p className="text-xs italic text-zinc-500 dark:text-zinc-400">{skelbimas.lotyniskas_pav || "Nenurodyta"}</p>
                 <div className="mt-3 flex flex-col gap-1 text-sm text-zinc-600 dark:text-zinc-400">
@@ -257,7 +276,7 @@ export default function GuestPage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/register" className="mt-8 inline-flex h-12 items-center justify-center rounded-xl bg-green-700 px-8 text-sm font-semibold text-white shadow-lg shadow-green-700/25 transition-all hover:bg-green-800">
+              <Link href="/planavimas" className="mt-8 inline-flex h-12 items-center justify-center rounded-xl bg-green-700 px-8 text-sm font-semibold text-white shadow-lg shadow-green-700/25 transition-all hover:bg-green-800">
                 Išbandyti planuotoją
               </Link>
             </div>
@@ -296,14 +315,14 @@ export default function GuestPage() {
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 py-12 sm:flex-row">
           <div className="flex items-center gap-2 text-lg font-bold text-green-700 dark:text-green-400">
             <span>🌲</span>
-            Dievų Miškas
+            Dievų Giria
           </div>
           <div className="flex gap-6 text-sm text-zinc-500 dark:text-zinc-400">
             <a href="#" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">Privatumo politika</a>
             <a href="#" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">Naudojimo sąlygos</a>
             <a href="#" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">Kontaktai</a>
           </div>
-          <p className="text-sm text-zinc-400 dark:text-zinc-500">© 2026 Dievų Miškas. Visos teisės saugomos.</p>
+          <p className="text-sm text-zinc-400 dark:text-zinc-500">© 2026 Dievų Giria. Visos teisės saugomos.</p>
         </div>
       </footer>
     </div>

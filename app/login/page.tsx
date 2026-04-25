@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
@@ -28,7 +28,13 @@ export default function LoginPage() {
     if (result?.error) {
       setError("Neteisingas el. paštas arba slaptažodis.");
     } else {
-      router.push("/");
+      // Get the updated session
+      const session = await getSession();
+      if (session?.user && (session.user as any).role === "administratorius") {
+        router.push("/admin");
+      } else {
+        router.push("/");
+      }
       router.refresh();
     }
   };
@@ -46,7 +52,7 @@ export default function LoginPage() {
             className="inline-flex items-center gap-2 text-2xl font-bold text-green-700 dark:text-green-400"
           >
             <span className="text-3xl">🌲</span>
-            Dievų Miškas
+            Dievų Giria
           </Link>
         </div>
 

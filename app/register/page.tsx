@@ -18,9 +18,19 @@ export default function RegisterPage() {
   const [slapyvardis, setSlapyvardis] = useState("");
   const [slaptazodis, setSlaptazodis] = useState("");
   const [confirmSlaptazodis, setConfirmSlaptazodis] = useState("");
+  
+  // Main role: "vartotojas" (Pirkėjas) or "atstovas" (Pardavėjas)
   const [role, setRole] = useState<"vartotojas" | "atstovas">("vartotojas");
+  
+  // Sub-role toggle for Pardavėjas
+  const [isPrivate, setIsPrivate] = useState(false);
 
-  // Imone fields (only for atstovas)
+  // Private Seller fields
+  const [miestas, setMiestas] = useState("");
+  const [telNr, setTelNr] = useState("");
+  const [privatusSvetaine, setPrivatusSvetaine] = useState("");
+
+  // Imone fields (only for company)
   const [imonePavadinimas, setImonePavadinimas] = useState("");
   const [imoneKodas, setImoneKodas] = useState("");
   const [imonePvmKodas, setImonePvmKodas] = useState("");
@@ -48,8 +58,16 @@ export default function RegisterPage() {
       return;
     }
 
-    if (role === "atstovas" && (!imonePavadinimas || !imoneKodas)) {
+    // Determine the actual role string to send to the API
+    const effectiveRole = role === "atstovas" && isPrivate ? "privatus_pardavejas" : role;
+
+    if (effectiveRole === "atstovas" && (!imonePavadinimas || !imoneKodas)) {
       setError("Įmonės pavadinimas ir įmonės kodas yra privalomi.");
+      return;
+    }
+
+    if (effectiveRole === "privatus_pardavejas" && (!miestas || !telNr)) {
+      setError("Miestas ir telefono numeris yra privalomi.");
       return;
     }
 
@@ -62,10 +80,13 @@ export default function RegisterPage() {
         e_pastas: ePastas,
         slapyvardis,
         slaptazodis,
-        role,
+        role: effectiveRole,
+        miestas: effectiveRole === "privatus_pardavejas" ? miestas : null,
+        tel_nr: effectiveRole === "privatus_pardavejas" ? telNr : null,
+        svetaine: effectiveRole === "privatus_pardavejas" ? privatusSvetaine : null,
       };
 
-      if (role === "atstovas") {
+      if (effectiveRole === "atstovas") {
         body.imone = {
           pavadinimas: imonePavadinimas,
           imones_kodas: imoneKodas,
@@ -93,7 +114,15 @@ export default function RegisterPage() {
         return;
       }
 
-      // Auto-login after registration
+      setLoading(false);
+
+      // For sellers, show pending approval message
+      if (effectiveRole === "atstovas" || effectiveRole === "privatus_pardavejas") {
+        setError("Registracija sėkminga! Jūsų paskyra laukia administratoriaus patvirtinimo. Prisijungti galėsite po patvirtinimo.");
+        return;
+      }
+
+      // For buyers, auto-login
       const loginResult = await signIn("credentials", {
         e_pastas: ePastas,
         slaptazodis,
@@ -125,7 +154,7 @@ export default function RegisterPage() {
             className="inline-flex items-center gap-2 text-2xl font-bold text-green-700 dark:text-green-400"
           >
             <span className="text-3xl">🌲</span>
-            Dievų Miškas
+            Dievų Giria
           </Link>
         </div>
 
@@ -144,7 +173,7 @@ export default function RegisterPage() {
           )}
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-5">
-            {/* ── ROLE TOGGLE (at the top so the form adapts) ── */}
+            {/* ── ROLE TOGGLE (Main options) ── */}
             <div>
               <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 Paskyros tipas
@@ -219,90 +248,138 @@ export default function RegisterPage() {
               <input id="confirmSlaptazodis" type="password" required value={confirmSlaptazodis} onChange={(e) => setConfirmSlaptazodis(e.target.value)} placeholder="••••••••" className={inputClass} />
             </div>
 
-            {/* ── IMONE FIELDS (only visible when Pardavėjas selected) ── */}
+            {/* ── SELLER TYPE TOGGLE & FIELDS ── */}
             {role === "atstovas" && (
               <div className="space-y-5 rounded-2xl border border-green-200 bg-green-50/50 p-5 dark:border-green-900 dark:bg-green-950/20">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">🏢</span>
-                  <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
-                    Įmonės informacija
-                  </h2>
-                </div>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  Kiekvienas pardavėjas privalo registruoti savo įmonę.
-                </p>
-
-                {/* Pavadinimas — required */}
-                <div>
-                  <label htmlFor="imonePavadinimas" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                    Įmonės pavadinimas <span className="text-red-500">*</span>
-                  </label>
-                  <input id="imonePavadinimas" type="text" required value={imonePavadinimas} onChange={(e) => setImonePavadinimas(e.target.value)} placeholder="UAB Žaliasis miškas" className={inputClass} />
-                </div>
-
-                {/* Imones kodas & PVM kodas */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label htmlFor="imoneKodas" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                      Įmonės kodas <span className="text-red-500">*</span>
-                    </label>
-                    <input id="imoneKodas" type="text" required value={imoneKodas} onChange={(e) => setImoneKodas(e.target.value)} placeholder="123456789" className={inputClass} />
-                  </div>
-                  <div>
-                    <label htmlFor="imonePvmKodas" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                      PVM kodas
-                    </label>
-                    <input id="imonePvmKodas" type="text" value={imonePvmKodas} onChange={(e) => setImonePvmKodas(e.target.value)} placeholder="LT123456789" className={inputClass} />
-                  </div>
+                
+                {/* Internal Slider for Seller Type */}
+                <div className="flex rounded-xl bg-zinc-200/50 p-1 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800">
+                  <button
+                    type="button"
+                    onClick={() => setIsPrivate(true)}
+                    className={`flex w-1/2 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all ${
+                      isPrivate
+                        ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-100"
+                        : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+                    }`}
+                  >
+                    👤 Privatus asmuo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsPrivate(false)}
+                    className={`flex w-1/2 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all ${
+                      !isPrivate
+                        ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-100"
+                        : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+                    }`}
+                  >
+                    🏢 Įmonė
+                  </button>
                 </div>
 
-                {/* Miestas & Pasto kodas */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label htmlFor="imoneMiestas" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                      Miestas
-                    </label>
-                    <input id="imoneMiestas" type="text" value={imoneMiestas} onChange={(e) => setImoneMiestas(e.target.value)} placeholder="Vilnius" className={inputClass} />
+                {isPrivate ? (
+                  /* PRIVATE SELLER FIELDS */
+                  <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2">
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
+                      Parduokite kaip privatus asmuo be įmonės rekvizitų.
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label htmlFor="miestas" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                          Miestas <span className="text-red-500">*</span>
+                        </label>
+                        <input id="miestas" type="text" required value={miestas} onChange={(e) => setMiestas(e.target.value)} placeholder="Kaunas" className={inputClass} />
+                      </div>
+                      <div>
+                        <label htmlFor="telNr" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                          Telefono nr. <span className="text-red-500">*</span>
+                        </label>
+                        <input id="telNr" type="tel" required value={telNr} onChange={(e) => setTelNr(e.target.value)} placeholder="+370 600 00000" className={inputClass} />
+                      </div>
+                    </div>
+                    <div>
+                      <label htmlFor="privatusSvetaine" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                        Svetainė (Neprivaloma)
+                      </label>
+                      <input id="privatusSvetaine" type="text" value={privatusSvetaine} onChange={(e) => setPrivatusSvetaine(e.target.value)} placeholder="website.com" className={inputClass} />
+                    </div>
                   </div>
-                  <div>
-                    <label htmlFor="imonePastoKodas" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                      Pašto kodas
-                    </label>
-                    <input id="imonePastoKodas" type="text" value={imonePastoKodas} onChange={(e) => setImonePastoKodas(e.target.value)} placeholder="LT-01234" className={inputClass} />
-                  </div>
-                </div>
+                ) : (
+                  /* COMPANY FIELDS */
+                  <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      Parduokite kaip registruota įmonė.
+                    </p>
 
-                {/* Adresas & Pastato nr */}
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="col-span-2">
-                    <label htmlFor="imoneAdresas" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                      Adresas
-                    </label>
-                    <input id="imoneAdresas" type="text" value={imoneAdresas} onChange={(e) => setImoneAdresas(e.target.value)} placeholder="Miško g." className={inputClass} />
-                  </div>
-                  <div>
-                    <label htmlFor="imonePastatoNr" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                      Pastato nr.
-                    </label>
-                    <input id="imonePastatoNr" type="text" value={imonePastatoNr} onChange={(e) => setImonePastatoNr(e.target.value)} placeholder="15A" className={inputClass} />
-                  </div>
-                </div>
+                    <div>
+                      <label htmlFor="imonePavadinimas" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                        Įmonės pavadinimas <span className="text-red-500">*</span>
+                      </label>
+                      <input id="imonePavadinimas" type="text" required value={imonePavadinimas} onChange={(e) => setImonePavadinimas(e.target.value)} placeholder="UAB Žaliasis miškas" className={inputClass} />
+                    </div>
 
-                {/* Tel nr & Svetaine */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label htmlFor="imoneTelNr" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                      Telefono nr.
-                    </label>
-                    <input id="imoneTelNr" type="tel" value={imoneTelNr} onChange={(e) => setImoneTelNr(e.target.value)} placeholder="+370 600 12345" className={inputClass} />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label htmlFor="imoneKodas" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                          Įmonės kodas <span className="text-red-500">*</span>
+                        </label>
+                        <input id="imoneKodas" type="text" required value={imoneKodas} onChange={(e) => setImoneKodas(e.target.value)} placeholder="123456789" className={inputClass} />
+                      </div>
+                      <div>
+                        <label htmlFor="imonePvmKodas" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                          PVM kodas
+                        </label>
+                        <input id="imonePvmKodas" type="text" value={imonePvmKodas} onChange={(e) => setImonePvmKodas(e.target.value)} placeholder="LT123456789" className={inputClass} />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label htmlFor="imoneMiestas" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                          Miestas
+                        </label>
+                        <input id="imoneMiestas" type="text" value={imoneMiestas} onChange={(e) => setImoneMiestas(e.target.value)} placeholder="Vilnius" className={inputClass} />
+                      </div>
+                      <div>
+                        <label htmlFor="imonePastoKodas" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                          Pašto kodas
+                        </label>
+                        <input id="imonePastoKodas" type="text" value={imonePastoKodas} onChange={(e) => setImonePastoKodas(e.target.value)} placeholder="LT-01234" className={inputClass} />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="col-span-2">
+                        <label htmlFor="imoneAdresas" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                          Adresas
+                        </label>
+                        <input id="imoneAdresas" type="text" value={imoneAdresas} onChange={(e) => setImoneAdresas(e.target.value)} placeholder="Miško g." className={inputClass} />
+                      </div>
+                      <div>
+                        <label htmlFor="imonePastatoNr" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                          Pastato nr.
+                        </label>
+                        <input id="imonePastatoNr" type="text" value={imonePastatoNr} onChange={(e) => setImonePastatoNr(e.target.value)} placeholder="15A" className={inputClass} />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label htmlFor="imoneTelNr" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                          Telefono nr.
+                        </label>
+                        <input id="imoneTelNr" type="tel" value={imoneTelNr} onChange={(e) => setImoneTelNr(e.target.value)} placeholder="+370 600 12345" className={inputClass} />
+                      </div>
+                      <div>
+                        <label htmlFor="imoneSvetaine" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                          Svetainė (Neprivaloma)
+                        </label>
+                        <input id="imoneSvetaine" type="text" value={imoneSvetaine} onChange={(e) => setImoneSvetaine(e.target.value)} placeholder="website.com" className={inputClass} />
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label htmlFor="imoneSvetaine" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                      Svetainė
-                    </label>
-                    <input id="imoneSvetaine" type="url" value={imoneSvetaine} onChange={(e) => setImoneSvetaine(e.target.value)} placeholder="https://www.imone.lt" className={inputClass} />
-                  </div>
-                </div>
+                )}
               </div>
             )}
 

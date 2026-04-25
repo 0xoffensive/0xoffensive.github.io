@@ -14,42 +14,60 @@ export default function Navbar() {
           className="flex items-center gap-2 text-xl font-bold text-green-700 dark:text-green-400"
         >
           <span className="text-2xl">🌲</span>
-          Dievų Miškas
+          Dievų Giria
         </Link>
         <div className="hidden items-center gap-8 md:flex">
-          <a
-            href="#features"
-            className="text-sm font-medium hover:text-green-700 dark:hover:text-green-400 transition-colors"
-          >
+          <a href="#features" className="text-sm font-medium hover:text-green-700 transition-colors">
             Funkcijos
           </a>
-          <a
-            href="#how-it-works"
-            className="text-sm font-medium hover:text-green-700 dark:hover:text-green-400 transition-colors"
-          >
+          <a href="#how-it-works" className="text-sm font-medium hover:text-green-700 transition-colors">
             Kaip veikia
           </a>
-          <Link
-            href="/skelbimas"
-            className="text-sm font-medium hover:text-green-700 dark:hover:text-green-400 transition-colors"
-          >
+          <Link href="/skelbimas" className="text-sm font-medium hover:text-green-700 transition-colors">
             Turgavietė
           </Link>
-          <a
-            href="#planner"
-            className="text-sm font-medium hover:text-green-700 dark:hover:text-green-400 transition-colors"
-          >
+          <Link href="/planavimas" className="text-sm font-medium hover:text-green-700 transition-colors">
             Planavimas
-          </a>
+          </Link>
         </div>
 
+        {/* Replaced + Skelbimas with Mano skelbimai */}
         {session?.user && (session.user as any).role === "atstovas" && (
-          <Link
-            href="/skelbimas/kurti"
-            className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-800"
-          >
-            + Skelbimas
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/mano-skelbimai"
+              className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-800"
+            >
+              Mano skelbimai
+            </Link>
+            <Link
+              href="/skelbimas/kurti"
+              className="group relative flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-sm font-semibold text-white hover:from-blue-700 hover:to-cyan-700 transition-all duration-200 hover:shadow-lg hover:shadow-blue-600/30 hover:scale-105 active:scale-95"
+            >
+              <span className="group-hover:scale-110 transition-transform">✏️</span>
+              Kurti skelbimus
+            </Link>
+          </div>
+        )}
+
+        {/* Admin panel link for administrators */}
+        {session?.user && (session.user as any).role === "administratorius" && (
+          <div className="flex items-center gap-2">
+            <Link
+              href="/admin"
+              className="group relative flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-orange-600 to-red-600 text-sm font-semibold text-white hover:from-orange-700 hover:to-red-700 transition-all duration-200 hover:shadow-lg hover:shadow-orange-600/30 hover:scale-105 active:scale-95"
+            >
+              <span className="group-hover:scale-110 transition-transform">⚙️</span>
+              Admin panelė
+            </Link>
+            <Link
+              href="/skelbimas/kurti"
+              className="group relative flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-sm font-semibold text-white hover:from-blue-700 hover:to-cyan-700 transition-all duration-200 hover:shadow-lg hover:shadow-blue-600/30 hover:scale-105 active:scale-95"
+            >
+              <span className="group-hover:scale-110 transition-transform">✏️</span>
+              Kurti skelbimus
+            </Link>
+          </div>
         )}
 
         <div className="flex items-center gap-3">
@@ -57,6 +75,13 @@ export default function Navbar() {
             <div className="h-9 w-24 animate-pulse rounded-lg bg-zinc-200 dark:bg-zinc-800" />
           ) : session ? (
             <>
+              <Link
+                href="/profilis"
+                className="flex items-center gap-2 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-green-700 transition-colors"
+              >
+                <span className="text-lg">👤</span>
+                Profilis
+              </Link>
               <span className="text-sm text-zinc-600 dark:text-zinc-400">
                 Sveiki, <span className="font-medium text-zinc-900 dark:text-zinc-100">{session.user?.name}</span>
               </span>
